@@ -16,8 +16,8 @@ RUN apt-get update && \
 # Copy the source code into the container
 COPY src ./src
 
-# Build the application
-RUN mvn clean package -DskipTests
+# Build the application and skip tests to speed up the build
+RUN mvn clean install -DskipTests
 
 # Copy the built JAR file to the image
 COPY target/CortexTask-0.0.1-SNAPSHOT.jar app.jar

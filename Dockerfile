@@ -1,19 +1,25 @@
 # Use an official Java runtime as a parent image
-FROM openjdk:17-jdk-slim
+FROM openjdk:17-jdk-slim AS base
 
 # Set the working directory in the container
 WORKDIR /app
 
-# Copy the Maven pom.xml and the source code into the container
+# Copy the Maven pom.xml first to leverage Docker caching
 COPY pom.xml .
+
+# Install Maven and dependencies
+RUN apt-get update && \
+    apt-get install -y maven && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Copy the source code into the container
 COPY src ./src
 
-# Update package lists, install Maven, and build the application
-RUN apt-get update && apt-get install -y maven && \
-    mvn clean package -DskipTests && \
-    apt-get clean && rm -rf /var/lib/apt/lists/*
+# Build the application
+RUN mvn clean package -DskipTests
 
-
+# Copy the built JAR file to the image
 COPY target/CortexTask-0.0.1-SNAPSHOT.jar app.jar
 
 # Expose the port that the app runs on

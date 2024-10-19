@@ -13,7 +13,7 @@ services:
       - db
       - flyway
     restart: on-failure
-    command: java -jar app.jar
+    entrypoint: ["sh", "-c", "sleep 120 && java -jar app.jar"]
 
   flyway:
     image: flyway/flyway:7.10.0
@@ -23,7 +23,7 @@ services:
       - ./src/main/resources/db/migration:/flyway/sql
     env_file:
       - app.env
-    entrypoint: ["sh", "-c", "sleep 3 && flyway migrate"]
+    entrypoint: ["sh", "-c", "sleep 120 && flyway migrate"]
     restart: on-failure
 
   db:

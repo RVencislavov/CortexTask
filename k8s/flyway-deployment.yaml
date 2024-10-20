@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flyway
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: flyway
+  template:
+    metadata:
+      labels:
+        app: flyway
+    spec:
+      containers:
+        - name: flyway
+          image: flyway/flyway:7.10.0
+          env:
+            - name: FLYWAY_URL
+              value: jdbc:mysql://db:3306/cortexdb
+            - name: FLYWAY_USER
+              value: dbuser
+            - name: FLYWAY_PASSWORD
+              value: dbpassword
+            - name: FLYWAY_LOCATIONS
+              value: filesystem:/flyway/sql
+          volumeMounts:
+            - name: flyway-sql
+              mountPath: /flyway/sql
+          command: [ "sh", "-c", "sleep 120 && flyway migrate" ]
+      volumes:
+        - name: flyway-sql
+          hostPath:
+            path: ./src/main/resources/db/migration

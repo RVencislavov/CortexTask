@@ -14,6 +14,7 @@ services:
       - flyway
     restart: on-failure
     entrypoint: ["sh", "-c", "sleep 120 && java -jar app.jar"]
+    image: radko2424/cortextask:1.0.0
 
   flyway:
     image: flyway/flyway:7.10.0

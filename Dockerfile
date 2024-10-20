@@ -1,32 +1,40 @@
-# Use an official Java runtime as a parent image
+# Base image with OpenJDK 17 for the application
 FROM openjdk:17-jdk-slim AS base
 
-# Set the working directory in the container
 WORKDIR /app
 
-# Copy the Maven pom.xml first to leverage Docker caching
-COPY pom.xml .
+COPY pom.xml ./
 
-# Install Maven and dependencies
 RUN apt-get update && \
-    apt-get install -y maven && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
+    apt-get install -y maven
 
-# Copy the source code into the container
 COPY src ./src
-
-# Build the application and skip tests
 RUN mvn clean install -DskipTests
 
-# List the contents of the target directory to ensure the JAR is created
-RUN ls -l target/
+FROM openjdk:17-jdk-slim AS app
 
-# Copy the built JAR file to the image
-COPY target/CortexTask-0.0.1-SNAPSHOT.jar app.jar
+WORKDIR /app
 
-# Expose the port that the app runs on
-EXPOSE 8080
+COPY --from=base /app/target/CortexTask-0.0.1-SNAPSHOT.jar app.jar
 
-# Set the command to run the application
-CMD ["java", "-jar", "app.jar"]
+RUN apt-get update && \
+    apt-get install -y mariadb-server
+
+ENV MYSQL_DATABASE=cortexdb \
+    MYSQL_USER=dbuser \
+    MYSQL_PASSWORD=dbpassword \
+    MYSQL_ROOT_PASSWORD=rootpassword
+
+ENV SPRING_DATASOURCE_URL=jdbc:mariadb://localhost:3306/cortexdb \
+    SPRING_DATASOURCE_USERNAME=dbuser \
+    SPRING_DATASOURCE_PASSWORD=dbpassword
+
+EXPOSE 8080 3306
+
+COPY src/main/resources/db/migration/V1__Create_Excursions_Table.sql /app/script1.sql
+COPY src/main/resources/db/migration/V2__Insert_Initial_Excursions.sql /app/script2.sql
+
+COPY start-services.sh /app/start-services.sh
+RUN chmod +x /app/start-services.sh
+
+ENTRYPOINT ["/app/start-services.sh"]
